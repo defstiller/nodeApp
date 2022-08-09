@@ -18,14 +18,8 @@ async function loginHelper(req, res) {
 }
 async function compareHashAndSignIn(requestPassword, user, res) {
 	const response = await bcrypt.compare(requestPassword, user.password);
-	const token = jwt.sign({ email: user.email }, JWT_SECRET, {
-		expiresIn: "7d",
-	});
 	response
-		? res.status(200).json({
-			message: "User logged in successfully",
-			token,
-		})
+		? createToken(res, user, "User signed in successfully")
 		: res.status(400).json({
 			message: "Invalid email or password",
 		});
@@ -92,7 +86,6 @@ async function createToken(res, user, message) {
 	res.status(200).json({		
 		message,
 		token,
-		expiresIn,
 	});
 }
 async function checkToken(req, res, next) {
