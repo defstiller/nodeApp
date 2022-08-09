@@ -1,28 +1,38 @@
 import formidable from "formidable";
 import fs from "fs";
 import ImageModel from "../models/Image.js";
-async function upload(req, res, next)  {
+
+async function parseFormData(req, res, next) {
 	const form = new formidable.IncomingForm();
 	form.parse(req, async (err, fields, files) => {
 		if (err) {
 			res.status(500).send(err);
 		}
-		const oldPath = files.files.filepath;
-		let newPath = `uploads/${files.files.originalFilename}`;
-		if(fs.existsSync(newPath)) { // check if file already exists, if it does add current date to file name
-			const dateToString = Date.now().toString()
-			newPath = `uploads/${dateToString}_${files.files.originalFilename}` ;
+		req.fields = fields;
+		req.files = files;
+		next();
+	} );
+	
+}
+async function upload(req, res, next)  {
+	const {file} = req.files;
+	const oldPath = file.filepath;
+	let newPath = `uploads/${file.originalFilename}`;
+	if(fs.existsSync(newPath)) { // check if file already exists, if it does add current date to file name
+		const dateToString = Date.now().toString();
+		newPath = `uploads/${dateToString}_${file.originalFilename}` ;
+	}
+	fs.rename(oldPath, newPath, (err) => {
+		if (err) {
+			res.status(500).send(err);
 		}
-		fs.rename(oldPath, newPath, (err) => {
-			if (err) {
-				res.status(500).send(err);
-			}
-		});
-		uploadFileToDb(fields, newPath, res, req);
 	});
+	req.newPath = newPath;
+	next();
 
 }
-async function uploadFileToDb(fields, newPath, res, req) {
+async function uploadDataToDb(req, res) {
+	const {fields, newPath} = req;
 	const user = req.user.email;
 	const date = new Date().toLocaleDateString();
 	const image = new ImageModel({
@@ -35,17 +45,17 @@ async function uploadFileToDb(fields, newPath, res, req) {
 	try {
 		await image.save();
 		res.status(200).json({
-			message: "Uploaded successfully",
+			message: `Image uploaded successfully with id: ${image._id}`,
 		});
 	}
 	catch (err) {
-		removeFileFromDb(image._id);
+		removeDataFromDb(image._id);
 		res.status(500).json({
 			message: "Error uploading " + err.message, 
 		});
 	}
 }
-async function removeFileFromDb(id) {
+async function removeDataFromDb(id) {
 	try {
 		await ImageModel.findByIdAndDelete(id);
 	}
@@ -54,5 +64,5 @@ async function removeFileFromDb(id) {
 	}
 }
 
-export default upload;
+export {parseFormData, upload, uploadDataToDb};
  
