@@ -20,7 +20,7 @@ const signUpValidation = [
 		.withMessage("Password must be a string"),
 	body("password")
 		.isStrongPassword()
-		.withMessage("Password must be at least 6 characters, contain at least one number and one special character"),
+		.withMessage("Enter strong password"),
 ];
 
 export { loginValidation, signUpValidation };
