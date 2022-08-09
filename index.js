@@ -11,9 +11,8 @@ import ImageModel from "./models/Image.js";
 import fs from "fs";
 import path from "path";
 import bodyParser from "body-parser";
-import upload from "./helpers/uploadHelpers.js"; 
-import formidable from "formidable";
-import multer from "multer";
+import {upload, parseFormData, uploadDataToDb} from "./helpers/uploadHelpers.js"; 
+import {findFile, sendFile, checkId} from "./helpers/findDocHelpers.js";
 mongoose
 	.connect(MONGODB_URI, {useNewUrlParser: true})
 	.then(() => {
@@ -24,10 +23,10 @@ mongoose
 	});
 
 const app = express();
-const uploadMulter = multer({ dest: "uploads/" });
 app.use(express.json());
 app.use(cors({
-	origin: [PORT, "http://localhost:3000"],
+	origin: [PORT, "http://localhost:3000"], 
+	methods: ["GET","POST","DELETE","UPDATE","PUT","PATCH"]
 }));
 app.use(bodyParser.urlencoded(
 	{ extended:true }
@@ -45,11 +44,20 @@ app.post("/auth/login",
 );
 app.post("/upload",
 	checkToken,
+	parseFormData,
 	upload,
+	uploadDataToDb
 );
-app.get("/upload",
+app.get("/upload/find",
 	checkToken,
-	
+	checkId,
+	findFile
+);
+app.get("/download",
+	checkToken,
+	checkId,
+	findFile,
+	sendFile
 );
 app.listen(PORT, (error) => {
 	if (error) {
@@ -58,3 +66,4 @@ app.listen(PORT, (error) => {
 		console.log(`Server is listening on port ${PORT}`);
 	}
 });
+ 
