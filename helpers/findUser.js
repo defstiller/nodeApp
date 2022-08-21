@@ -14,8 +14,7 @@ async function findUser(req, res, functionToRunIfFound) {
 			message: "Error " + err.message,
 		});
 	}
-	console.log(userData);
-	return userData
+	return userData;
 }
 
 export default findUser;
